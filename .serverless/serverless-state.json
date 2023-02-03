@@ -1,0 +1,1061 @@
+{
+  "service": {
+    "service": "lsc-habeasdata-consulta-frontend",
+    "serviceObject": {
+      "name": "lsc-habeasdata-consulta-frontend"
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "nodejs12.x",
+      "stackTags": {
+        "lm_app": "Habeas Data",
+        "lm_troux_uid": "1B730507-66B9-406B-ADF0-0DC68BC30743",
+        "lm_sbu": "INTL",
+        "intl_country": "CO",
+        "intl_region": "LATAM",
+        "lm_app_env": "itcon"
+      },
+      "tags": {
+        "lm_app": "Habeas Data",
+        "lm_troux_uid": "1B730507-66B9-406B-ADF0-0DC68BC30743",
+        "lm_sbu": "INTL",
+        "intl_country": "CO",
+        "intl_region": "LATAM",
+        "lm_app_env": "itcon"
+      },
+      "region": "us-east-1",
+      "profile": "itcondev",
+      "timeout": 30,
+      "stage": "itcon",
+      "variableSyntax": "\\${([^{}:]+?(?:\\(|:)(?:[^:{}][^{}]*?)?)}",
+      "versionFunctions": true,
+      "compiledCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ServerlessDeploymentBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "ServerlessDeploymentBucketPolicy": {
+            "Type": "AWS::S3::BucketPolicy",
+            "Properties": {
+              "Bucket": {
+                "Ref": "ServerlessDeploymentBucket"
+              },
+              "PolicyDocument": {
+                "Statement": [
+                  {
+                    "Action": "s3:*",
+                    "Effect": "Deny",
+                    "Principal": "*",
+                    "Resource": [
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            },
+                            "/*"
+                          ]
+                        ]
+                      }
+                    ],
+                    "Condition": {
+                      "Bool": {
+                        "aws:SecureTransport": false
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "HabeasData": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "AccessControl": "Private",
+              "PublicAccessBlockConfiguration": {
+                "BlockPublicAcls": true,
+                "BlockPublicPolicy": true,
+                "IgnorePublicAcls": true,
+                "RestrictPublicBuckets": true
+              },
+              "BucketName": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "lsc-habeasdata-consulta-frontend-cloudfront-",
+                    "itcon"
+                  ]
+                ]
+              },
+              "Tags": [
+                {
+                  "Key": "lm_app",
+                  "Value": "Habeas Data"
+                },
+                {
+                  "Key": "lm_troux_uid",
+                  "Value": "1B730507-66B9-406B-ADF0-0DC68BC30743"
+                },
+                {
+                  "Key": "lm_sbu",
+                  "Value": "INTL"
+                },
+                {
+                  "Key": "intl_country",
+                  "Value": "CO"
+                },
+                {
+                  "Key": "intl_region",
+                  "Value": "LATAM"
+                },
+                {
+                  "Key": "lm_app_env",
+                  "Value": "itcon"
+                }
+              ]
+            }
+          },
+          "HabeasDataCloudFrontOriginAccessIdentity": {
+            "Type": "AWS::CloudFront::CloudFrontOriginAccessIdentity",
+            "Properties": {
+              "CloudFrontOriginAccessIdentityConfig": {
+                "Comment": "HabeasDataCloudFrontOriginAccessIdentityConfig"
+              }
+            }
+          },
+          "BucketPolicy": {
+            "Type": "AWS::S3::BucketPolicy",
+            "Properties": {
+              "PolicyDocument": {
+                "Id": "PolicyHabeasData",
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Sid": "PublicReadForGetBucketObjects",
+                    "Effect": "Allow",
+                    "Principal": {
+                      "CanonicalUser": {
+                        "Fn::GetAtt": [
+                          "HabeasDataCloudFrontOriginAccessIdentity",
+                          "S3CanonicalUserId"
+                        ]
+                      }
+                    },
+                    "Action": "s3:GetObject",
+                    "Resource": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:aws:s3:::",
+                          {
+                            "Ref": "HabeasData"
+                          },
+                          "/*"
+                        ]
+                      ]
+                    }
+                  }
+                ]
+              },
+              "Bucket": {
+                "Ref": "HabeasData"
+              }
+            }
+          },
+          "Distribution": {
+            "Type": "AWS::CloudFront::Distribution",
+            "Properties": {
+              "DistributionConfig": {
+                "Origins": [
+                  {
+                    "DomainName": {
+                      "Fn::GetAtt": [
+                        "HabeasData",
+                        "DomainName"
+                      ]
+                    },
+                    "Id": {
+                      "Ref": "HabeasData"
+                    },
+                    "S3OriginConfig": {
+                      "OriginAccessIdentity": {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "origin-access-identity/cloudfront/",
+                            {
+                              "Ref": "HabeasDataCloudFrontOriginAccessIdentity"
+                            }
+                          ]
+                        ]
+                      }
+                    }
+                  }
+                ],
+                "DefaultRootObject": "index.html",
+                "Enabled": true,
+                "HttpVersion": "http2",
+                "Aliases": [
+                  "itconawshabeasdataconsulta.com"
+                ],
+                "ViewerCertificate": {
+                  "MinimumProtocolVersion": "TLSv1.2_2019",
+                  "SslSupportMethod": "sni-only",
+                  "AcmCertificateArn": "arn:aws:acm:us-east-1:405115285418:certificate/cd80a134-3ce5-4548-aea3-a148ff960faf"
+                },
+                "DefaultCacheBehavior": {
+                  "MinTTL": 86400,
+                  "MaxTTL": 31536000,
+                  "ForwardedValues": {
+                    "QueryString": true,
+                    "Headers": [
+                      "Origin"
+                    ],
+                    "Cookies": {
+                      "Forward": "none"
+                    }
+                  },
+                  "TargetOriginId": {
+                    "Ref": "HabeasData"
+                  },
+                  "ViewerProtocolPolicy": "redirect-to-https"
+                },
+                "CustomErrorResponses": [
+                  {
+                    "ErrorCachingMinTTL": 86400,
+                    "ErrorCode": 404,
+                    "ResponseCode": 200,
+                    "ResponsePagePath": "/index.html"
+                  },
+                  {
+                    "ErrorCachingMinTTL": 86400,
+                    "ErrorCode": 403,
+                    "ResponseCode": 200,
+                    "ResponsePagePath": "/index.html"
+                  }
+                ],
+                "Restrictions": {
+                  "GeoRestriction": {
+                    "Locations": [
+                      "CO",
+                      "US"
+                    ],
+                    "RestrictionType": "whitelist"
+                  }
+                },
+                "Logging": {
+                  "Bucket": "lsc-habeasdata-frontend-logging-itcon.s3.amazonaws.com",
+                  "IncludeCookies": true,
+                  "Prefix": "HabeasDataConsulta/"
+                }
+              },
+              "Tags": [
+                {
+                  "Key": "lm_app",
+                  "Value": "Habeas Data"
+                },
+                {
+                  "Key": "lm_troux_uid",
+                  "Value": "1B730507-66B9-406B-ADF0-0DC68BC30743"
+                },
+                {
+                  "Key": "lm_sbu",
+                  "Value": "INTL"
+                },
+                {
+                  "Key": "intl_country",
+                  "Value": "CO"
+                },
+                {
+                  "Key": "intl_region",
+                  "Value": "LATAM"
+                },
+                {
+                  "Key": "lm_app_env",
+                  "Value": "itcon"
+                }
+              ]
+            }
+          },
+          "LambdaEdgeFunctionHeaders": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Role": {
+                "Fn::GetAtt": [
+                  "LambdaEdgeFunctionRole",
+                  "Arn"
+                ]
+              },
+              "Runtime": "nodejs12.x",
+              "Handler": "index.handler",
+              "Timeout": 5,
+              "Code": {
+                "ZipFile": "exports.handler = (event, context, callback) => {\n//Get contents of response\nconst response = event.Records[0].cf.response;\nconst headers = response.headers;\n\n//Set new headers\nheaders[\"content-security-policy\"] = [\n  {\n    key: \"Content-Security-Policy\",\n    value: \"default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; manifest-src 'self'; font-src 'self'; connect-src https://*.auth.us-east-1.amazoncognito.com https://*.execute-api.us-east-1.amazonaws.com;\",\n  },\n];\n\nheaders[\"x-content-type-options\"] = [\n  { key: \"X-Content-Type-Options\", value: \"nosniff\" },\n];\n\nheaders[\"x-frame-options\"] = [\n  { key: \"X-Frame-Options\", value: \"SAMEORIGIN\" }\n];\n\nheaders[\"x-permitted-cross-domain-policies\"] = [\n  { key: \"X-Permitted-Cross-Domain-Policies\", value: \"master-only\" }\n];\n\nheaders[\"x-xss-protection\"] = [\n  { key: \"X-XSS-Protection\", value: \"1; mode=block\" },\n];\n\nheaders[\"referrer-policy\"] = [\n  { key: \"Referrer-Policy\", value: \"same-origin\" },\n];\n\nheaders[\"strict-transport-security\"] = [\n  {\n    key: \"Strict-Transport-Security\",\n    value: \"max-age=63072000; includeSubdomains; preload\",\n  },\n];\n\n//Return modified response\ncallback(null, response);\n}\n"
+              },
+              "Tags": [
+                {
+                  "Key": "lm_app",
+                  "Value": "Habeas Data"
+                },
+                {
+                  "Key": "lm_troux_uid",
+                  "Value": "1B730507-66B9-406B-ADF0-0DC68BC30743"
+                },
+                {
+                  "Key": "lm_sbu",
+                  "Value": "INTL"
+                },
+                {
+                  "Key": "intl_country",
+                  "Value": "CO"
+                },
+                {
+                  "Key": "intl_region",
+                  "Value": "LATAM"
+                },
+                {
+                  "Key": "lm_app_env",
+                  "Value": "itcon"
+                }
+              ]
+            }
+          },
+          "LambdaEdgeFunctionRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "Path": "/",
+              "ManagedPolicyArns": [
+                "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ],
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "lambda.amazonaws.com",
+                        "edgelambda.amazonaws.com"
+                      ]
+                    },
+                    "Sid": "AllowLambdaServiceToAssumeRole",
+                    "Action": [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "LambdaEdgeFunctionHeadersVersion": {
+            "Type": "Custom::LatestLambdaVersion",
+            "Properties": {
+              "ServiceToken": {
+                "Fn::GetAtt": [
+                  "PublishLambdaVersion",
+                  "Arn"
+                ]
+              },
+              "FunctionName": {
+                "Ref": "LambdaEdgeFunctionHeaders"
+              },
+              "Nonce": 1
+            }
+          },
+          "PublishLambdaVersion": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Handler": "index.handler",
+              "Runtime": "nodejs12.x",
+              "Role": {
+                "Fn::GetAtt": [
+                  "PublishLambdaVersionRole",
+                  "Arn"
+                ]
+              },
+              "Code": {
+                "ZipFile": "const {Lambda} = require('aws-sdk')\nconst {send, SUCCESS, FAILED} = require('cfn-response')\nconst lambda = new Lambda()\nexports.handler = (event, context) => {\n  const {RequestType, ResourceProperties: {FunctionName}} = event\n  if (RequestType == 'Delete') return send(event, context, SUCCESS)\n  lambda.publishVersion({FunctionName}, (err, {FunctionArn}) => {\n    err\n      ? send(event, context, FAILED, err)\n      : send(event, context, SUCCESS, {FunctionArn})\n  })\n}\n"
+              },
+              "Tags": [
+                {
+                  "Key": "lm_app",
+                  "Value": "Habeas Data"
+                },
+                {
+                  "Key": "lm_troux_uid",
+                  "Value": "1B730507-66B9-406B-ADF0-0DC68BC30743"
+                },
+                {
+                  "Key": "lm_sbu",
+                  "Value": "INTL"
+                },
+                {
+                  "Key": "intl_country",
+                  "Value": "CO"
+                },
+                {
+                  "Key": "intl_region",
+                  "Value": "LATAM"
+                },
+                {
+                  "Key": "lm_app_env",
+                  "Value": "itcon"
+                }
+              ]
+            }
+          },
+          "PublishLambdaVersionRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": "lambda.amazonaws.com"
+                    },
+                    "Sid": "AllowLambdaServiceToAssumeRole",
+                    "Action": [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              },
+              "ManagedPolicyArns": [
+                "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ],
+              "Policies": [
+                {
+                  "PolicyName": "PublishVersion",
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": "lambda:PublishVersion",
+                        "Resource": "*"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": {
+              "Ref": "ServerlessDeploymentBucket"
+            }
+          },
+          "CloudFrontURL": {
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  "https://",
+                  {
+                    "Fn::GetAtt": [
+                      "Distribution",
+                      "DomainName"
+                    ]
+                  }
+                ]
+              ]
+            },
+            "Description": "URL for the website and redirection using S3"
+          },
+          "WebsiteURL": {
+            "Value": {
+              "Fn::GetAtt": [
+                "HabeasData",
+                "WebsiteURL"
+              ]
+            },
+            "Description": "URL for website hosted on S3"
+          },
+          "S3BucketSecureURL": {
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  "https://",
+                  {
+                    "Fn::GetAtt": [
+                      "HabeasData",
+                      "DomainName"
+                    ]
+                  }
+                ]
+              ]
+            },
+            "Description": "Name of S3 bucket to hold website content"
+          },
+          "LambdaEdgeFunctionQualifiedArn": {
+            "Value": {
+              "Fn::GetAtt": [
+                "LambdaEdgeFunctionHeaders",
+                "Arn"
+              ]
+            }
+          }
+        }
+      },
+      "coreCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ServerlessDeploymentBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "ServerlessDeploymentBucketPolicy": {
+            "Type": "AWS::S3::BucketPolicy",
+            "Properties": {
+              "Bucket": {
+                "Ref": "ServerlessDeploymentBucket"
+              },
+              "PolicyDocument": {
+                "Statement": [
+                  {
+                    "Action": "s3:*",
+                    "Effect": "Deny",
+                    "Principal": "*",
+                    "Resource": [
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            },
+                            "/*"
+                          ]
+                        ]
+                      }
+                    ],
+                    "Condition": {
+                      "Bool": {
+                        "aws:SecureTransport": false
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": {
+              "Ref": "ServerlessDeploymentBucket"
+            }
+          }
+        }
+      }
+    },
+    "custom": {
+      "stage": "itcon",
+      "profile": "itcondev",
+      "acm_certificate": "arn:aws:acm:us-east-1:405115285418:certificate/cd80a134-3ce5-4548-aea3-a148ff960faf",
+      "alias_domain": "itconawshabeasdataconsulta.com",
+      "cognito_auth_domain": "",
+      "logging_bucket": "lsc-habeasdata-frontend-logging-itcon.s3.amazonaws.com"
+    },
+    "pluginsData": {},
+    "functions": {},
+    "resources": {
+      "Resources": {
+        "HabeasData": {
+          "Type": "AWS::S3::Bucket",
+          "Properties": {
+            "AccessControl": "Private",
+            "PublicAccessBlockConfiguration": {
+              "BlockPublicAcls": true,
+              "BlockPublicPolicy": true,
+              "IgnorePublicAcls": true,
+              "RestrictPublicBuckets": true
+            },
+            "BucketName": {
+              "Fn::Join": [
+                "",
+                [
+                  "lsc-habeasdata-consulta-frontend-cloudfront-",
+                  "itcon"
+                ]
+              ]
+            },
+            "Tags": [
+              {
+                "Key": "lm_app",
+                "Value": "Habeas Data"
+              },
+              {
+                "Key": "lm_troux_uid",
+                "Value": "1B730507-66B9-406B-ADF0-0DC68BC30743"
+              },
+              {
+                "Key": "lm_sbu",
+                "Value": "INTL"
+              },
+              {
+                "Key": "intl_country",
+                "Value": "CO"
+              },
+              {
+                "Key": "intl_region",
+                "Value": "LATAM"
+              },
+              {
+                "Key": "lm_app_env",
+                "Value": "itcon"
+              }
+            ]
+          }
+        },
+        "HabeasDataCloudFrontOriginAccessIdentity": {
+          "Type": "AWS::CloudFront::CloudFrontOriginAccessIdentity",
+          "Properties": {
+            "CloudFrontOriginAccessIdentityConfig": {
+              "Comment": "HabeasDataCloudFrontOriginAccessIdentityConfig"
+            }
+          }
+        },
+        "BucketPolicy": {
+          "Type": "AWS::S3::BucketPolicy",
+          "Properties": {
+            "PolicyDocument": {
+              "Id": "PolicyHabeasData",
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "PublicReadForGetBucketObjects",
+                  "Effect": "Allow",
+                  "Principal": {
+                    "CanonicalUser": {
+                      "Fn::GetAtt": [
+                        "HabeasDataCloudFrontOriginAccessIdentity",
+                        "S3CanonicalUserId"
+                      ]
+                    }
+                  },
+                  "Action": "s3:GetObject",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:s3:::",
+                        {
+                          "Ref": "HabeasData"
+                        },
+                        "/*"
+                      ]
+                    ]
+                  }
+                }
+              ]
+            },
+            "Bucket": {
+              "Ref": "HabeasData"
+            }
+          }
+        },
+        "Distribution": {
+          "Type": "AWS::CloudFront::Distribution",
+          "Properties": {
+            "DistributionConfig": {
+              "Origins": [
+                {
+                  "DomainName": {
+                    "Fn::GetAtt": [
+                      "HabeasData",
+                      "DomainName"
+                    ]
+                  },
+                  "Id": {
+                    "Ref": "HabeasData"
+                  },
+                  "S3OriginConfig": {
+                    "OriginAccessIdentity": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "origin-access-identity/cloudfront/",
+                          {
+                            "Ref": "HabeasDataCloudFrontOriginAccessIdentity"
+                          }
+                        ]
+                      ]
+                    }
+                  }
+                }
+              ],
+              "DefaultRootObject": "index.html",
+              "Enabled": true,
+              "HttpVersion": "http2",
+              "Aliases": [
+                "itconawshabeasdataconsulta.com"
+              ],
+              "ViewerCertificate": {
+                "MinimumProtocolVersion": "TLSv1.2_2019",
+                "SslSupportMethod": "sni-only",
+                "AcmCertificateArn": "arn:aws:acm:us-east-1:405115285418:certificate/cd80a134-3ce5-4548-aea3-a148ff960faf"
+              },
+              "DefaultCacheBehavior": {
+                "MinTTL": 86400,
+                "MaxTTL": 31536000,
+                "ForwardedValues": {
+                  "QueryString": true,
+                  "Headers": [
+                    "Origin"
+                  ],
+                  "Cookies": {
+                    "Forward": "none"
+                  }
+                },
+                "TargetOriginId": {
+                  "Ref": "HabeasData"
+                },
+                "ViewerProtocolPolicy": "redirect-to-https"
+              },
+              "CustomErrorResponses": [
+                {
+                  "ErrorCachingMinTTL": 86400,
+                  "ErrorCode": 404,
+                  "ResponseCode": 200,
+                  "ResponsePagePath": "/index.html"
+                },
+                {
+                  "ErrorCachingMinTTL": 86400,
+                  "ErrorCode": 403,
+                  "ResponseCode": 200,
+                  "ResponsePagePath": "/index.html"
+                }
+              ],
+              "Restrictions": {
+                "GeoRestriction": {
+                  "Locations": [
+                    "CO",
+                    "US"
+                  ],
+                  "RestrictionType": "whitelist"
+                }
+              },
+              "Logging": {
+                "Bucket": "lsc-habeasdata-frontend-logging-itcon.s3.amazonaws.com",
+                "IncludeCookies": true,
+                "Prefix": "HabeasDataConsulta/"
+              }
+            },
+            "Tags": [
+              {
+                "Key": "lm_app",
+                "Value": "Habeas Data"
+              },
+              {
+                "Key": "lm_troux_uid",
+                "Value": "1B730507-66B9-406B-ADF0-0DC68BC30743"
+              },
+              {
+                "Key": "lm_sbu",
+                "Value": "INTL"
+              },
+              {
+                "Key": "intl_country",
+                "Value": "CO"
+              },
+              {
+                "Key": "intl_region",
+                "Value": "LATAM"
+              },
+              {
+                "Key": "lm_app_env",
+                "Value": "itcon"
+              }
+            ]
+          }
+        },
+        "LambdaEdgeFunctionHeaders": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+            "Role": {
+              "Fn::GetAtt": [
+                "LambdaEdgeFunctionRole",
+                "Arn"
+              ]
+            },
+            "Runtime": "nodejs12.x",
+            "Handler": "index.handler",
+            "Timeout": 5,
+            "Code": {
+              "ZipFile": "exports.handler = (event, context, callback) => {\n//Get contents of response\nconst response = event.Records[0].cf.response;\nconst headers = response.headers;\n\n//Set new headers\nheaders[\"content-security-policy\"] = [\n  {\n    key: \"Content-Security-Policy\",\n    value: \"default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; manifest-src 'self'; font-src 'self'; connect-src https://*.auth.us-east-1.amazoncognito.com https://*.execute-api.us-east-1.amazonaws.com;\",\n  },\n];\n\nheaders[\"x-content-type-options\"] = [\n  { key: \"X-Content-Type-Options\", value: \"nosniff\" },\n];\n\nheaders[\"x-frame-options\"] = [\n  { key: \"X-Frame-Options\", value: \"SAMEORIGIN\" }\n];\n\nheaders[\"x-permitted-cross-domain-policies\"] = [\n  { key: \"X-Permitted-Cross-Domain-Policies\", value: \"master-only\" }\n];\n\nheaders[\"x-xss-protection\"] = [\n  { key: \"X-XSS-Protection\", value: \"1; mode=block\" },\n];\n\nheaders[\"referrer-policy\"] = [\n  { key: \"Referrer-Policy\", value: \"same-origin\" },\n];\n\nheaders[\"strict-transport-security\"] = [\n  {\n    key: \"Strict-Transport-Security\",\n    value: \"max-age=63072000; includeSubdomains; preload\",\n  },\n];\n\n//Return modified response\ncallback(null, response);\n}\n"
+            },
+            "Tags": [
+              {
+                "Key": "lm_app",
+                "Value": "Habeas Data"
+              },
+              {
+                "Key": "lm_troux_uid",
+                "Value": "1B730507-66B9-406B-ADF0-0DC68BC30743"
+              },
+              {
+                "Key": "lm_sbu",
+                "Value": "INTL"
+              },
+              {
+                "Key": "intl_country",
+                "Value": "CO"
+              },
+              {
+                "Key": "intl_region",
+                "Value": "LATAM"
+              },
+              {
+                "Key": "lm_app_env",
+                "Value": "itcon"
+              }
+            ]
+          }
+        },
+        "LambdaEdgeFunctionRole": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+            "Path": "/",
+            "ManagedPolicyArns": [
+              "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+            ],
+            "AssumeRolePolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Service": [
+                      "lambda.amazonaws.com",
+                      "edgelambda.amazonaws.com"
+                    ]
+                  },
+                  "Sid": "AllowLambdaServiceToAssumeRole",
+                  "Action": [
+                    "sts:AssumeRole"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "LambdaEdgeFunctionHeadersVersion": {
+          "Type": "Custom::LatestLambdaVersion",
+          "Properties": {
+            "ServiceToken": {
+              "Fn::GetAtt": [
+                "PublishLambdaVersion",
+                "Arn"
+              ]
+            },
+            "FunctionName": {
+              "Ref": "LambdaEdgeFunctionHeaders"
+            },
+            "Nonce": 1
+          }
+        },
+        "PublishLambdaVersion": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+            "Handler": "index.handler",
+            "Runtime": "nodejs12.x",
+            "Role": {
+              "Fn::GetAtt": [
+                "PublishLambdaVersionRole",
+                "Arn"
+              ]
+            },
+            "Code": {
+              "ZipFile": "const {Lambda} = require('aws-sdk')\nconst {send, SUCCESS, FAILED} = require('cfn-response')\nconst lambda = new Lambda()\nexports.handler = (event, context) => {\n  const {RequestType, ResourceProperties: {FunctionName}} = event\n  if (RequestType == 'Delete') return send(event, context, SUCCESS)\n  lambda.publishVersion({FunctionName}, (err, {FunctionArn}) => {\n    err\n      ? send(event, context, FAILED, err)\n      : send(event, context, SUCCESS, {FunctionArn})\n  })\n}\n"
+            },
+            "Tags": [
+              {
+                "Key": "lm_app",
+                "Value": "Habeas Data"
+              },
+              {
+                "Key": "lm_troux_uid",
+                "Value": "1B730507-66B9-406B-ADF0-0DC68BC30743"
+              },
+              {
+                "Key": "lm_sbu",
+                "Value": "INTL"
+              },
+              {
+                "Key": "intl_country",
+                "Value": "CO"
+              },
+              {
+                "Key": "intl_region",
+                "Value": "LATAM"
+              },
+              {
+                "Key": "lm_app_env",
+                "Value": "itcon"
+              }
+            ]
+          }
+        },
+        "PublishLambdaVersionRole": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+            "AssumeRolePolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Service": "lambda.amazonaws.com"
+                  },
+                  "Sid": "AllowLambdaServiceToAssumeRole",
+                  "Action": [
+                    "sts:AssumeRole"
+                  ]
+                }
+              ]
+            },
+            "ManagedPolicyArns": [
+              "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+            ],
+            "Policies": [
+              {
+                "PolicyName": "PublishVersion",
+                "PolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Action": "lambda:PublishVersion",
+                      "Resource": "*"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "Outputs": {
+        "CloudFrontURL": {
+          "Value": {
+            "Fn::Join": [
+              "",
+              [
+                "https://",
+                {
+                  "Fn::GetAtt": [
+                    "Distribution",
+                    "DomainName"
+                  ]
+                }
+              ]
+            ]
+          },
+          "Description": "URL for the website and redirection using S3"
+        },
+        "WebsiteURL": {
+          "Value": {
+            "Fn::GetAtt": [
+              "HabeasData",
+              "WebsiteURL"
+            ]
+          },
+          "Description": "URL for website hosted on S3"
+        },
+        "S3BucketSecureURL": {
+          "Value": {
+            "Fn::Join": [
+              "",
+              [
+                "https://",
+                {
+                  "Fn::GetAtt": [
+                    "HabeasData",
+                    "DomainName"
+                  ]
+                }
+              ]
+            ]
+          },
+          "Description": "Name of S3 bucket to hold website content"
+        },
+        "LambdaEdgeFunctionQualifiedArn": {
+          "Value": {
+            "Fn::GetAtt": [
+              "LambdaEdgeFunctionHeaders",
+              "Arn"
+            ]
+          }
+        }
+      }
+    },
+    "configValidationMode": "warn",
+    "serviceFilename": "serverless-itcon.yml",
+    "layers": {},
+    "initialServerlessConfig": {
+      "service": {
+        "$ref": "$[\"service\"][\"serviceObject\"]"
+      },
+      "custom": {
+        "stage": "itcon",
+        "profile": "itcondev",
+        "acm_certificate": "arn:aws:acm:us-east-1:405115285418:certificate/cd80a134-3ce5-4548-aea3-a148ff960faf",
+        "alias_domain": "itconawshabeasdataconsulta.com",
+        "cognito_auth_domain": "",
+        "logging_bucket": "lsc-habeasdata-frontend-logging-itcon.s3.amazonaws.com"
+      },
+      "provider": {
+        "$ref": "$[\"service\"][\"provider\"]"
+      },
+      "resources": {
+        "$ref": "$[\"service\"][\"resources\"]"
+      }
+    },
+    "isDashboardMonitoringPreconfigured": false
+  },
+  "package": {
+    "artifactDirectoryName": "serverless/lsc-habeasdata-consulta-frontend/itcon/1606165720386-2020-11-23T21:08:40.386Z",
+    "artifact": ""
+  }
+}

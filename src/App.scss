@@ -1,0 +1,39 @@
+/* The following line can be included in a src/App.scss */
+
+// Your variable overrides
+
+$body-bg: #FFFFFF;
+$primary :  #99E5EA;
+
+// Bootstrap and its default variables
+@import "~bootstrap/scss/bootstrap";
+
+
+@font-face{
+    font-family: 'roboto';
+    src: url('./assets/fonts/Roboto/Roboto-Light.ttf');
+}
+
+
+@font-face{
+    font-family: 'roboto medium';
+    src: url('./assets/fonts/Roboto/Roboto-Medium.ttf');
+}
+
+@font-face{
+    font-family: 'roboto bold';
+    src: url('./assets/fonts/Roboto/Roboto-Bold.ttf');
+}
+
+@font-face{
+    font-family: 'roboto regular';
+    src: url('./assets/fonts/Roboto/Roboto-Regular.ttf');
+}
+
+body{
+    font-family: 'roboto';
+}
+
+.main {
+    min-height: 200px;
+}

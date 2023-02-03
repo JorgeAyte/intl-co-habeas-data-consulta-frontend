@@ -1,0 +1,50 @@
+library('utils@master') _
+
+def MAJOR_VERSION = "1"
+def ARTIFACT_VERSION = "${MAJOR_VERSION}.${BUILD_NUMBER}"
+
+node('linux') {
+
+	stage('Git Checkout') {
+		checkout scm
+	}
+
+  // TODO: Check sonarqube project keys
+	stage('Test sonarqube') {
+		withSonarQubeEnv('sonarqube') {
+      sh 'sonar-scanner -Dsonar.projectKey=W-CO-10.7.1-Habeas-Data -Dsonar.projectName=habeas-data-consulta-frontend-dev -Dsonar.projectVersion=1.0.0 -Dsonar.sources=src'
+	 	}
+	}
+
+	stage('install') {
+		withAWS(credentials:getAWSCredentialID(environment:"${env.APPENV}"), region:'us-east-1') {
+      sh 'npm install'
+      sh 'pwd'
+      sh 'ls'
+      sh 'dir'
+    }
+	}
+
+  stage('deploy') {
+    withAWS(credentials:getAWSCredentialID(environment:"${env.APPENV}"), region:'us-east-1') {
+      sh 'sls --version'
+      sh 'sls deploy -v --config serverless.yml --stage dev'
+    }
+  }
+
+  stage('AWS stage') {
+    withAWS(credentials:getAWSCredentialID(environment:"${env.APPENV}"), region:'us-east-1') {
+      sh 'aws --version'
+      sh """
+            ls -lha
+            npm install
+            npm run build:dev
+            ls -lha
+          """
+      sh 'aws s3 sync build s3://lsc-habeasdata-consulta-frontend-cloudfront-dev --delete'
+      sh 'aws s3 sync --acl public-read-write build s3://lsc-habeasdata-consulta-frontend-cloudfront-dev --delete'
+      sh 'aws s3 cp build s3://lsc-habeasdata-consulta-frontend-cloudfront-dev --recursive --metadata-directive REPLACE --recursive --cache-control max-age=0,no-cache,no-store,must-revalidate'
+      sh 'aws cloudfront create-invalidation --distribution-id E2SRLWIVLGURUR --paths "/*"'
+    }
+  }
+ }

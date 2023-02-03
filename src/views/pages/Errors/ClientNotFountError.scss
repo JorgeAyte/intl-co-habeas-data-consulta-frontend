@@ -1,0 +1,68 @@
+@import "../../../assets/scss/variables.scss";
+
+.icon-content {
+  height: 48px;
+  width: 48px;
+  background-color: #FFECDB;
+  margin: auto;
+  border-radius: 50%;
+  text-align: center;
+}
+.icon-content img {
+    margin-top: 12px;
+}
+.title-error-client {
+  height: 24px;
+  width: 420px;
+  color: #1E1045;
+  font-size: 21px;
+  letter-spacing: 0;
+  line-height: 24px;
+  margin-top: 16px;
+  font-family: 'roboto medium';
+}
+.message-error-client {
+  height: 46px;
+  width: 416px;
+  color: #343741;
+  font-size: 19px;
+  letter-spacing: 0;
+  line-height: 23px;
+  margin-top: 18px;
+  font-family: 'roboto regular';
+}
+
+.btn-error-client {
+  height: 44px;
+  width: 151px;
+  border-radius: 3px;
+  background-color: #28A3AF;
+  box-sizing: border-box;
+  border: 1px solid;
+  margin-top: 37px;
+  color:#FFFFFF ;
+  font-family: 'roboto medium';
+}
+.btn-error-client svg {
+ font-size: 20px;
+ margin-right: 5px;
+}
+.modal-content {
+  box-sizing: border-box;
+  height: 308px !important;
+  width: 496px !important;
+  border: 1px solid #EE7000;
+  border-radius: 3px;
+  background-color: #FFFFFF;
+  box-shadow: 0 2px 6px 0 rgba(0,0,0,0.3);
+  text-align: center;
+  padding: 1rem;
+}
+.modal-backdrop.show {
+    opacity: 1.0;
+    background-color: rgba(30,16,69,0.9);
+}
+
+.modal.show .modal-dialog {
+    margin-top: 9rem;
+}

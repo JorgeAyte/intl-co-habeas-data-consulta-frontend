@@ -1,0 +1,66 @@
+@import "../../../assets/scss/variables.scss";
+
+.liberty-navbar{
+  background-color: $lsc-color-yellow;
+}
+
+
+.liberty-navbar .title{
+  height: 19px;
+  width: 447px;
+  color: #1A1446;
+  font-size: 16px;
+  letter-spacing: 0;
+  line-height: 19px;
+  font-family: 'roboto regular';
+}
+
+.content-mobile {
+  height: auto;
+  width: 100%;
+  background-color: rgba(255,208,0,0.6);
+  padding: 6px;
+}
+.content-mobile h5 {
+  height: auto;
+  width: auto;
+  color: #343741;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 15px;
+  text-align: center;
+  margin-bottom: 0px;
+}
+
+.line {
+  box-sizing: border-box;
+  height: 21px;
+  width: 1px;
+  border: 1px solid #1A1446;
+  margin-left: 23px !important;
+  margin-right: 24px !important;
+}
+@media(min-width:992px) {
+  .liberty-navbar {
+    height: 85px;
+    padding-left: 111px !important;
+  }
+
+  .logo{
+    height: 53px;
+    width: 105px;
+  }
+}
+
+@media (max-width: 991px){
+
+  .liberty-navbar {
+    height: 80px;
+  }
+
+  .logo{
+    height: 53px;
+    width: 105px;
+  }
+}

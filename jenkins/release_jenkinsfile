@@ -1,0 +1,39 @@
+#!/usr/bin/env groovy
+
+@Library('utils@master') _
+
+import com.lmig.intl.cloud.jenkins.util.EnvConfigUtil
+
+def ARTIFACT_VERSION = "1.${BUILD_NUMBER}";
+
+node('linux') {
+    stage('Preparation') {
+        git credentialsId: 'github-lmigtech', url: 'https://github.com/lmigtech/habeas-consulta-data-frontend.git', branch: 'master'
+        sh 'pwd'
+        sh 'ls'
+    }
+
+    stage('Zip Files && Artifactory upload') {
+        sh 'cd ..'
+        sh 'pwd'
+        sh 'ls'
+        sh 'zip -r COL-Habeasdata-consulta-frontend.zip . -x COL-Habeasdata-consulta-frontend/jenkins/dev_jenkinsfile COL-Habeasdata-consulta-frontend/jenkins/nonprod_jenkinsfile COL-Habeasdata-consulta-frontend/.serverless COL-Habeasdata-consulta-frontend/.git/**'
+        sh 'pwd'
+        sh 'ls'
+
+        def artifacts = ['COL-Habeasdata-consulta-frontend.zip']
+
+        artifactoryUploadFiles files:artifacts,version:ARTIFACT_VERSION,packageType:'npm',appName:'COL-Habeasdata-consulta-frontend'
+    }
+
+    stage('Artifactory Promoted to Prod') {
+        promoteToProd(
+            email:'Carlos.Unate@Libertycolombia.com',
+            promoteArtifact: true,
+            appName:'COL-Habeasdata-consulta-frontend',
+            packageType:'npm',
+            version: ARTIFACT_VERSION,
+            singleJenkinsfilePattern: true
+        ){}
+    }
+}

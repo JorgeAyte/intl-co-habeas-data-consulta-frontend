@@ -1,0 +1,314 @@
+service: lsc-habeasdata-consulta-frontend
+custom: ${file(./env/${opt:stage}.yml)}
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stackTags: ${self:custom.stackTags}
+  tags: ${self:custom.stackTags}
+  region: us-east-1
+  timeout: 30
+  stage: ${self:custom.stage}
+
+resources:
+  Resources:
+    HabeasData:
+      Type: 'AWS::S3::Bucket'
+      Properties:
+        AccessControl: Private
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        BucketName:  !Join
+          - ''
+          - - 'lsc-habeasdata-consulta-frontend-cloudfront-'
+            - ${self:custom.stage}
+        Tags: ${self:custom.tags}
+  
+    HabeasDataCloudFrontOriginAccessIdentity:
+      Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+      Properties:
+        CloudFrontOriginAccessIdentityConfig:
+          Comment: "HabeasDataCloudFrontOriginAccessIdentityConfig"
+
+    BucketPolicy:
+      Type: 'AWS::S3::BucketPolicy'
+      Properties:
+        PolicyDocument:
+          Id: PolicyHabeasData
+          Version: '2012-10-17'
+          Statement:
+            - Sid: PublicReadForGetBucketObjects
+              Effect: Allow
+              Principal:
+                CanonicalUser: !GetAtt HabeasDataCloudFrontOriginAccessIdentity.S3CanonicalUserId
+              Action: 's3:GetObject'
+              Resource: !Join 
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref 'HabeasData'
+                  - /*
+        Bucket: !Ref 'HabeasData'
+    
+    Distribution:
+      Type: 'AWS::CloudFront::Distribution'
+      Properties:
+        DistributionConfig:
+          Origins:
+            - 
+              DomainName: !GetAtt HabeasData.DomainName
+              Id: !Ref 'HabeasData'
+              S3OriginConfig:
+                OriginAccessIdentity: !Join
+                  - ''
+                  - - 'origin-access-identity/cloudfront/'
+                    - !Ref "HabeasDataCloudFrontOriginAccessIdentity"
+          DefaultRootObject: index.html
+          Enabled: true
+          HttpVersion: 'http2'
+          Aliases:
+            - ${self:custom.alias_domain}
+          ViewerCertificate:
+            MinimumProtocolVersion: TLSv1.2_2018
+            SslSupportMethod: sni-only
+            AcmCertificateArn: ${self:custom.acm_certificate} 
+          DefaultCacheBehavior: 
+            MinTTL: 86400  # 1 day
+            MaxTTL: 31536000  # 1 year
+            ForwardedValues: 
+              QueryString: true
+              Headers:
+                - Origin
+              Cookies:
+                Forward: none
+            TargetOriginId: !Ref 'HabeasData'
+            ViewerProtocolPolicy: "redirect-to-https"            
+            LambdaFunctionAssociations:
+              - EventType: origin-response
+                LambdaFunctionARN: !GetAtt LambdaEdgeFunctionHeadersVersion.FunctionArn
+          # custom pages 
+          CustomErrorResponses:
+            - 
+              ErrorCachingMinTTL: 86400
+              ErrorCode: 404
+              ResponseCode: 200
+              ResponsePagePath: "/index.html"
+            - 
+              ErrorCachingMinTTL: 86400
+              ErrorCode: 403
+              ResponseCode: 200
+              ResponsePagePath: "/index.html"
+          Logging:
+            Bucket: ${self:custom.logging_bucket} 
+            IncludeCookies: true
+            Prefix: 'HabeasDataConsulta/'
+          WebACLId: ${self:custom.web_acl_id}
+
+        Tags: ${self:custom.tags}
+
+    LambdaEdgeFunctionHeaders:
+      Type: 'AWS::Lambda::Function'
+      Properties:
+        Role: !GetAtt LambdaEdgeFunctionRole.Arn
+        Runtime: nodejs12.x
+        Handler: index.handler
+        Timeout: 5
+        Code:
+          ZipFile: |
+            exports.handler = (event, context, callback) => {
+            //Get contents of response
+            const response = event.Records[0].cf.response;
+            const headers = response.headers;
+
+            //Set new headers
+            headers["content-security-policy"] = [
+              {
+                key: "Content-Security-Policy",
+                value: "default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; manifest-src 'self'; font-src 'self'; connect-src https://*.auth.us-east-1.amazoncognito.com https://*.execute-api.us-east-1.amazonaws.com;",
+              },
+            ];
+
+            headers["x-content-type-options"] = [
+              { key: "X-Content-Type-Options", value: "nosniff" },
+            ];
+
+            headers["x-frame-options"] = [
+              { key: "X-Frame-Options", value: "SAMEORIGIN" }
+            ];
+
+            headers["x-permitted-cross-domain-policies"] = [
+              { key: "X-Permitted-Cross-Domain-Policies", value: "master-only" }
+            ];
+
+            headers["x-xss-protection"] = [
+              { key: "X-XSS-Protection", value: "1; mode=block" },
+            ];
+
+            headers["referrer-policy"] = [
+              { key: "Referrer-Policy", value: "same-origin" },
+            ];
+
+            headers["strict-transport-security"] = [
+              {
+                key: "Strict-Transport-Security",
+                value: "max-age=63072000; includeSubdomains; preload",
+              },
+            ];
+
+            //Return modified response
+            callback(null, response);
+            }
+        Tags: ${self:custom.tags}
+        VpcConfig:
+          SecurityGroupIds: ${self:custom.securityGroupIds}
+          SubnetIds: ${self:custom.subnetIds}
+
+    LambdaEdgeFunctionRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+          Path: "/"
+          ManagedPolicyArns:
+            - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          AssumeRolePolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Principal:
+                  Service: 
+                    - "lambda.amazonaws.com"
+                    - "edgelambda.amazonaws.com"
+                Sid: "AllowLambdaServiceToAssumeRole"
+                Action: 
+                  - "sts:AssumeRole"
+          Policies:
+            - PolicyName: ec2-vpc-lambdaFunction
+              PolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                - Effect: Allow
+                  Action:
+                    - 'ec2:CreateNetworkInterface'
+                    - 'ec2:DescribeNetworkInterfaces'
+                    - 'ec2:DeleteNetworkInterface'
+                  Resource: '*'
+
+    LambdaEdgeFunctionHeadersVersion:
+      Type: 'Custom::LatestLambdaVersion'
+      Properties:
+        ServiceToken: !GetAtt PublishLambdaVersion.Arn
+        FunctionName: !Ref LambdaEdgeFunctionHeaders
+        Nonce: 22
+
+    PublishLambdaVersion:
+      Type: 'AWS::Lambda::Function'
+      Properties:
+        Handler: index.handler
+        Runtime: nodejs12.x
+        Role: !GetAtt PublishLambdaVersionRole.Arn
+        Code:
+          ZipFile: |
+            const {Lambda} = require('aws-sdk')
+            const {send, SUCCESS, FAILED} = require('cfn-response')
+            const lambda = new Lambda()
+            exports.handler = (event, context) => {
+              const {RequestType, ResourceProperties: {FunctionName}} = event
+              if (RequestType == 'Delete') return send(event, context, SUCCESS)
+              lambda.publishVersion({FunctionName}, (err, {FunctionArn}) => {
+                err
+                  ? send(event, context, FAILED, err)
+                  : send(event, context, SUCCESS, {FunctionArn})
+              })
+            }
+        Tags: ${self:custom.tags}
+        VpcConfig:
+          SecurityGroupIds: ${self:custom.securityGroupIds}
+          SubnetIds: ${self:custom.subnetIds}
+
+    PublishLambdaVersionRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Sid: "AllowLambdaServiceToAssumeRole"
+            Action: 
+              - sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        Policies:
+          - PolicyName: PublishVersion
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+              - Effect: Allow
+                Action: lambda:PublishVersion
+                Resource: '*'
+          - PolicyName: ec2-vpc-lambdaFunction
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+              - Effect: Allow
+                Action:
+                  - 'ec2:CreateNetworkInterface'
+                  - 'ec2:DescribeNetworkInterfaces'
+                  - 'ec2:DeleteNetworkInterface'
+                Resource: '*'
+          - PolicyName: waf-cloudfront
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+              - Effect: Allow
+                Action:
+                  - wafv2:ListWebACLs
+                  - wafv2:GetWebACL
+                  - wafv2:GetWebACLForResource
+                  - wafv2:GetWebACLForResource
+                  - wafv2:AssociateWebACL
+                Resource: ${self:custom.web_acl_id}
+  
+  Outputs:
+    CloudFrontURL:
+      Value: !Join
+        - ''
+        - - 'https://'
+          - !GetAtt 
+            - Distribution
+            - DomainName
+      Description: URL for the website and redirection using S3
+
+    WebsiteURL:
+      Value: !GetAtt 
+        - HabeasData
+        - WebsiteURL
+      Description: URL for website hosted on S3
+
+    S3BucketSecureURL:
+      Value: !Join 
+        - ''
+        - - 'https://'
+          - !GetAtt 
+            - HabeasData
+            - DomainName
+      Description: Name of S3 bucket to hold website content
+
+    LambdaEdgeFunctionQualifiedArn:
+      Value: !GetAtt LambdaEdgeFunctionHeaders.Arn
+
+    CloudFrontDistributionID:
+      Value: !Ref Distribution
+
+    CloudFrontARN:
+      Value: !Join 
+        - ''
+        - - 'arn:aws:cloudfront::'
+          - !Ref 'AWS::AccountId'
+          - ':distribution/'
+          - !Ref Distribution
+      Description: ARN Cloudfront Distribution
+
+

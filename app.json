@@ -1,0 +1,9 @@
+{
+  "binaryDir": "build",
+  "projectDir": "./",
+  "appName": "consulta-habeas-data",
+  "artifactoryName": "intl-co-habeas-data-consulta-frontend",
+
+  "bucket": "consultahabeasdata",
+  "bucketSuffix": ""
+}

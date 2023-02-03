@@ -1,0 +1,116 @@
+.content-search-result {
+    margin-top: 50px !important;
+    width: 962px;
+}
+
+
+
+.content-search-result h2 {
+    height: 32px;
+    color: #1E1045;
+    font-size: 27px;
+    letter-spacing: 0;
+    line-height: 32px;
+    text-align: center;
+    font-family: 'roboto regular' ;
+}
+
+.content-search-result .card {
+    box-sizing: border-box;
+    height:276px;
+    width: 100%;
+    margin: auto;
+    border: 1px solid #E6E6E6 ;
+    border-radius: 3px;
+    background-color: '#FFFFFF';
+    box-shadow: 0 2px 16px 0 rgba(192,191,192,0.53);
+    margin-top: 23px;
+    font-family: 'roboto regular';
+}
+.info-client {
+    margin-top:33px;
+}
+.info-client span  {
+  height: 18px;
+  width: 66px;
+  color: #343741;
+  font-size: 15px;
+  letter-spacing: 0;
+  line-height: 18px;
+  margin-left: 8px;
+  font-family: 'roboto bold';
+}
+
+.info-client p {
+  height: 26px;
+  color: #343741;
+  font-size: 16px;
+  letter-spacing: 0;
+  line-height: 25.6px;
+  margin-top: 23.63px;
+}
+.info-authorizations {
+    margin-top: 32px;
+}
+.info-authorizations span {
+  height: 18px;
+  width: 105px;
+  color: #343741;
+  font-size: 15px;
+  letter-spacing: 0;
+  line-height: 18px;
+  margin-left: 8px;
+  font-family: 'roboto bold';
+}
+
+.info-authorizations p {
+  height: 26px;
+  color: #343741;
+  font-size: 16px;
+  letter-spacing: 0;
+  line-height: 25.6px;
+
+}
+
+.info-grants {
+    margin-top: 32px;
+    text-align: center;
+}
+.info-grants span {
+  height: 18px;
+  width: 63px;
+  color: #343741;
+  font-size: 15px;
+  letter-spacing: 0;
+  line-height: 18px;
+  font-family: 'roboto bold';
+}
+
+.content-grants p {
+    width: 19px;
+    height: 19px;
+    box-sizing: border-box;
+    border-radius: 2px;
+    color: #ffffff;
+    margin: auto;
+    margin-bottom: 1.5rem;
+}
+.grants-true {
+    border: 1px solid #28A3AF;
+    background-color: #28A3AF;
+    color: #ffffff;
+    border-radius: 2px;
+}
+.grants-false {
+    border: 1px solid #E92243;
+    background-color: #E92243;
+    color: #ffffff;
+    border-radius: 2px;
+}
+
+@media(min-width:1200) {
+  .content-search-result {
+    width: 75%;
+    margin: auto;
+  }
+}

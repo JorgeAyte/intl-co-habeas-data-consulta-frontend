@@ -1,0 +1,6 @@
+stage: 'itcon'
+profile: 'itcondev'
+acm_certificate: 'arn:aws:acm:us-east-1:405115285418:certificate/cd80a134-3ce5-4548-aea3-a148ff960faf'
+alias_domain: 'itconawshabeasdataconsulta.com'
+cognito_auth_domain: ''
+logging_bucket: 'lsc-habeasdata-frontend-logging-itcon.s3.amazonaws.com'
